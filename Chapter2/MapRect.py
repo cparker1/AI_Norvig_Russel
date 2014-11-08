@@ -38,9 +38,13 @@ class MapRect(object):
     MapRect is an object intended to create a map for other
     objects to interact with it.  It only contains a grid
     where each cell has properties.
+
+    Expects a class to be passed in during initialization, which will
+    specify the class of data that the map represents.
     """
 
-    def __init__(self, cell_contents):
+    def __init__(self, cell_contents, cell_content_args=None):
+        self.cell_content_args = cell_content_args if cell_content_args else tuple()
         self.array = []
         self.col_len = 0
         self.row_len = 0
@@ -50,7 +54,8 @@ class MapRect(object):
     def set_dimensions(self, col_len, row_len):
         self.x_dim = col_len
         self.row_len = row_len
-        self.array = [[self.cell_type() for x in range(col_len)]
+        # TODO Try to make the map more general in terms of what the cells can be
+        self.array = [[self.cell_type(*self.cell_content_args) for x in range(col_len)]
                       for y in range(row_len)]
         pass
 
@@ -101,10 +106,8 @@ class MapRect(object):
 
 if __name__ == "__main__":
     test = MapRect(MapCell)
-    test.set_dimensions(10, 5)
-    test.get_element(0, 0).toggle_state()
-
+    test.set_dimensions(100, 100)
     for x in [ele for row in test.array for ele in row]:
-        x.set_state(get_rand_weighted_val([0, 1], [0.3, 0.7]))
+        x.set_state(get_rand_weighted_val([0, 1], [0.95, 0.05]))
 
     test.display_map(MapCell.get_state)
