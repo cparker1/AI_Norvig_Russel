@@ -1,7 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import Vacuum
+from Vacuum import Vacuum
 from random import randint
+import itertools
 __author__ = "Charles A. Parker"
 
 # TODO use logging module
@@ -64,7 +65,7 @@ def get_rand_weighted_val(value_probability_pair):
 
 
 # TODO do I really need this class?...
-class Dirt(object):
+class Thing(object):
     """
     This is a placeholder.  It doesn't do anything
     but indicate that dirt is in a cell!
@@ -72,32 +73,77 @@ class Dirt(object):
     Also have static methods defined here for setting
     up an environment
     """
+    def __init__(self):
+        self._x = 0
+        self._y = 0
+
+    @property
+    def x(self):
+        return self._x
+
+    @x.setter
+    def x(self, value):
+        self._x = value
+
+    @property
+    def y(self):
+        return self._y
+
+    @y.setter
+    def y(self, value):
+        self._y = value
+
+
+class Dirt(Thing):
     @staticmethod
     def dump_dirt(environment, positions):
         for x, y in positions:
-            environment.add_object_to_cell(x, y, Dirt())
+            environment.create_object((x, y), Dirt())
         pass
 
     @staticmethod
     def dump_rand_dirt(environment, count):
-        positions = []
-        for n in range(count):
-            rand_x = randint(0, environment.xdim - 1)
-            rand_y = randint(0, environment.ydim - 1)
-            positions.append((rand_x, rand_y))
+        f = lambda x: randint(0, x - 1)
+        positions = [(f(environment.xdim), f(environment.ydim)) for n in range(count)]
         Dirt.dump_dirt(environment, positions)
 
-
-class Furniture(object):
+class Furniture(Thing):
     pass
 
 
-class Wall(object):
+class Wall(Thing):
     pass
 
 
-class VacuumHome(object):
+class VacuumHome(Thing):
     pass
+
+
+class ThingList(dict):
+    """
+    A Class that a Vacuum environment uses to track the 
+    locations and types of objects that the environment
+    houses
+    """
+    def __init__(self):
+        self._id_cntr = itertools.count()
+
+    @property
+    def id_cntr(self):
+        return self._id_cntr.next()
+
+    def new_object(self, coords, thing):
+        self.update({self.id_cntr: thing})
+        thing.x = coords[0]
+        thing.y = coords[1]
+
+    def get_objects_at_location(self, coords):
+        return [thing for thing in self.values() if thing.x == coords[0] and thing.y == coords[1]]
+        pass
+
+    def print_list(self):
+        for key, value in self.items():
+            print key, value, value.x, value.y
 
 
 class VacuumEnvironment(object):
@@ -115,6 +161,7 @@ class VacuumEnvironment(object):
     def __init__(self):
         self._xdim = 0
         self._ydim = 0
+        self._obj_list = ThingList()
         pass
 
     @property
@@ -136,39 +183,37 @@ class VacuumEnvironment(object):
     def set_dimensions(self, xdim, ydim):
         self._xdim = xdim
         self._ydim = ydim
-        self._env = [[[] for n in range(xdim)] for n in range(ydim)]
 
-    def get_cell_contents(self, x, y):
-        try:
-            return self._env[y][x]
-        except:
-            return None
+    def get_cell_contents(self, coords):
+        return self._obj_list.get_objects_at_location(coords)
 
-    def add_object_to_cell(self, x, y, thing):
-        self._env[y][x].append(thing)
+    def check_for_object_in_cell(self, coords, thing):
+        return any(isinstance(item, thing) for item in self.get_cell_contents(coords))
 
-    def check_for_object_in_cell(self, x, y, thing):
-        return any(isinstance(item, thing) for item in self.get_cell_contents(x, y))
+    def move_object_from_cell_to_cell(self, src_coords, targ_coords, thing):
+        pass
 
-    def remove_object_from_cell(self, x, y, thing):
-        try:
-            get_cell_contents(x, y).remove(thing)
-        except ValueError:
-            print "remove_object_from_cell(): TRIED TO REMOVE NON EXISTENT OBJECT"
-            print "thing={}, cell={}".format(thing, get_cell_contents(x, y))
+    def create_object(self, coords, thing):
+        self._obj_list.new_object(coords, thing)
+        pass
+
+    def delete_object(self, thing):
+        pass
 
     def display_cell_counts(self):
+        self._obj_list.print_list()
         for y in range(self.ydim):
-            print [len(self.get_cell_contents(x, y)) for x in range(self.xdim)]
+            print [len(self.get_cell_contents((x, y))) for x in range(self.xdim)]
 
-    # TODO Figure out how to do this correctly.  Trying
-    # to apply an arbitrary functionto the whole data set
     def display_map(self, display_types=None):
         plt.imshow(grid)
         plt.show()
 
+    def process_turn():
+        pass
 
-class AgentEnvironmentInterface(object):
+
+class VacuumSensors(object):
     """
     An interface for an agent and an environment.
     The interface takes commands from the agent and
@@ -177,15 +222,17 @@ class AgentEnvironmentInterface(object):
     def __init__(self, environment):
         pass
 
-
 def build_environment(dimensions, dirt_cnt, vacuum_cnt):
     env = VacuumEnvironment()
     env.set_dimensions(*dimensions)
     Dirt.dump_rand_dirt(env, dirt_cnt)
+    env.create_object((3,1), Vacuum(None))
     return env
 
+# def build_expriment(environment, num_vacuums, )
+
 if __name__ == "__main__":
-    dims = (10, 10)
+    dims = (15, 15)
     test = build_environment(dims, 15, 1)
     test.display_cell_counts()
 

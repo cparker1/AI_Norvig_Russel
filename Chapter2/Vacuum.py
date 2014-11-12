@@ -1,5 +1,6 @@
-
 __author__ = "Charles A. Parker"
+
+from VacuumEnvironment import Thing
 
 XDIR = 0
 YDIR = 1
@@ -20,7 +21,7 @@ def get_rand_weighted_val(value_probability_pair):
     return value_probability_pair[np.digitize(prob_sum * np.random.random_sample(1), bins)][0]
 
 
-class Vacuum(object):
+class Vacuum(Thing):
     """
     A simple vacuum object.
 
