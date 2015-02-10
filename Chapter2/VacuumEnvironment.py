@@ -73,24 +73,7 @@ class Thing(object):
     up an environment
     """
     def __init__(self):
-        self._x = 0
-        self._y = 0
-
-    @property
-    def x(self):
-        return self._x
-
-    @x.setter
-    def x(self, value):
-        self._x = value
-
-    @property
-    def y(self):
-        return self._y
-
-    @y.setter
-    def y(self, value):
-        self._y = value
+        self.pos = None
 
 
 class Dirt(Thing):
@@ -103,7 +86,7 @@ class Dirt(Thing):
     @staticmethod
     def dump_rand_dirt(environment, count):
         f = lambda x: randint(0, x - 1)
-        positions = [(f(environment.xdim), f(environment.ydim)) for n in range(count)]
+        positions = [(f(environment.dims[0]), f(environment.dims[1])) for n in range(count)]
         Dirt.dump_dirt(environment, positions)
 
 class Furniture(Thing):
@@ -132,88 +115,16 @@ class ThingList(dict):
         return self._id_cntr.next()
 
     def new_object(self, coords, thing):
+        thing.pos = coords
         self.update({self.id_cntr: thing})
-        thing.x = coords[0]
-        thing.y = coords[1]
 
     def get_objects_at_location(self, coords):
-        return [thing for thing in self.values() if thing.x == coords[0] and thing.y == coords[1]]
+        return [thing for thing in self.values() if thing.pos == coords]
         pass
 
     def print_list(self):
         for key, value in self.items():
-            print key, value, value.x, value.y
-
-
-class VacuumEnvironment(object):
-    """
-    This class contains the map of the envirnoment.  It
-    holds all the objects that exist in it, and also
-    governs the operation of each object.  Objects can
-    send a request to perform an action, and the environment
-    returns the actions result.
-
-    Each cell in the environment has a list of objects occupying
-    that cell.
-    """
-
-    def __init__(self):
-        self._xdim = 0
-        self._ydim = 0
-        self._obj_list = ThingList()
-        pass
-
-    @property
-    def xdim(self):
-        return self._xdim
-
-    @xdim.setter
-    def xdim(self, value):
-        self._xdim = value
-
-    @property
-    def ydim(self):
-        return self._ydim
-
-    @ydim.setter
-    def ydim(self, value):
-        self._ydim = value
-
-    def set_dimensions(self, xdim, ydim):
-        self._xdim = xdim
-        self._ydim = ydim
-
-    def get_cell_contents(self, coords):
-        return self._obj_list.get_objects_at_location(coords)
-
-    def check_for_object_in_cell(self, coords, thing):
-        return any(isinstance(item, thing) for item in self.get_cell_contents(coords))
-
-    def move_object_from_cell_to_cell(self, src_coords, targ_coords, thing):
-        pass
-
-    def create_object(self, coords, thing):
-        self._obj_list.new_object(coords, thing)
-        if hasattr(thing, 'env'):
-            print thing
-            thing.env = self
-        pass
-
-    def delete_object(self, thing):
-        pass
-
-    def display_cell_counts(self):
-        self._obj_list.print_list()
-        for y in range(self.ydim):
-            print [len(self.get_cell_contents((x, y))) for x in range(self.xdim)]
-
-
-    def display_map(self, display_types=None):
-        plt.imshow(grid)
-        plt.show()
-
-    def process_turn():
-        pass
+            print key, value, value.pos
 
 
 class Vacuum(Thing):
@@ -233,8 +144,9 @@ class Vacuum(Thing):
     """
 
     def __init__(self):
+        Thing.__init__(self)
         self._direction_axis = 0
-        self._direction_positivity = 0
+        self._direction_positivity = 1
         self._bumper = 0
         self._power = 5000
         self.power_threshold = 200
@@ -311,15 +223,61 @@ class Vacuum(Thing):
         pass
 
 
+class VacuumEnvironment(object):
+    """
+    This class contains the map of the envirnoment.  It
+    holds all the objects that exist in it, and also
+    governs the operation of each object.  Objects can
+    send a request to perform an action, and the environment
+    returns the actions result.
+
+    Each cell in the environment has a list of objects occupying
+    that cell.
+    """
+
+    def __init__(self, dims):
+        self.dims = dims
+        self._obj_list = ThingList()
+        pass
+
+    def get_cell_contents(self, coords):
+        return self._obj_list.get_objects_at_location(coords)
+
+    def check_for_object_in_cell(self, coords, thing):
+        return any(isinstance(item, thing) for item in self.get_cell_contents(coords))
+
+    def move_object_from_cell_to_cell(self, src_coords, targ_coords, thing):
+        pass
+
+    def create_object(self, coords, thing):
+        self._obj_list.new_object(coords, thing)
+        if hasattr(thing, 'env'):
+            print thing
+            thing.env = self
+        pass
+
+    def delete_object(self, thing):
+        pass
+
+    def display_cell_counts(self):
+        self._obj_list.print_list()
+        for y in range(self.dims[0]):
+            print [len(self.get_cell_contents((x, y))) for x in range(self.dims[1])]
+
+
+    def display_map(self, display_types=None):
+        plt.imshow(grid)
+        plt.show()
+
+    def process_turn():
+        pass
+
 
 def build_environment(dimensions, dirt_cnt, vacuum_cnt):
-    env = VacuumEnvironment()
-    env.set_dimensions(*dimensions)
+    env = VacuumEnvironment(dimensions)
     Dirt.dump_rand_dirt(env, dirt_cnt)
     env.create_object((3,1), Vacuum())
     return env
-
-# def build_expriment(environment, num_vacuums, )
 
 if __name__ == "__main__":
     dims = (7, 7)
