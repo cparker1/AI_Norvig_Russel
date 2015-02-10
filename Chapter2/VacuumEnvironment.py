@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from Vacuum import Vacuum
 from random import randint
 import itertools
 __author__ = "Charles A. Parker"
@@ -195,6 +194,9 @@ class VacuumEnvironment(object):
 
     def create_object(self, coords, thing):
         self._obj_list.new_object(coords, thing)
+        if hasattr(thing, 'env'):
+            print thing
+            thing.env = self
         pass
 
     def delete_object(self, thing):
@@ -205,6 +207,7 @@ class VacuumEnvironment(object):
         for y in range(self.ydim):
             print [len(self.get_cell_contents((x, y))) for x in range(self.xdim)]
 
+
     def display_map(self, display_types=None):
         plt.imshow(grid)
         plt.show()
@@ -213,30 +216,112 @@ class VacuumEnvironment(object):
         pass
 
 
-class VacuumSensors(object):
+class Vacuum(Thing):
     """
-    An interface for an agent and an environment.
-    The interface takes commands from the agent and
-    returns the environments response.
+    A simple vacuum object.
+
+    It has five basic commands:
+    Move forward
+    Turn left
+    Turn right
+    Clean curent position
+
+    It has three percepts:
+    Bump - Unable to move in the direction attempted
+    See dirt - Found dirt underneath the vacuum
+    Sense home - Is the vacuum in the home square
     """
-    def __init__(self, environment):
+
+    def __init__(self):
+        self._direction_axis = 0
+        self._direction_positivity = 0
+        self._bumper = 0
+        self._power = 5000
+        self.power_threshold = 200
+        self.rand_turn = [(self.turn_left, 1),
+                          (self.turn_right, 1)]
+        self.rand_motion = [(self.turn_left, 1),
+                            (self.turn_right, 1),
+                            (self.move_forward, 1)]
+        self.env = None
+
+    @property
+    def power(self):
+        return self._power
+
+    @power.setter
+    def power(self, value):
+        self._power = value
+
+    @property
+    def direction(self):
+        return self._direction
+
+    @direction.setter
+    def direction(self, value):
+        self._direction = value
+
+    @property
+    def bumper(self):
+        return self._bumper
+
+    # ACTIONS
+    def turn_left(self):
         pass
+
+    def turn_right(self):
+        pass
+
+    def move_forward(self):
+        pass
+
+    def clean_square(self):
+        pass
+
+    def power_off(self):
+        pass
+
+    # ACTION WRAPPERS
+    def rand_move(self, cmds):
+        get_rand_weighted_val(cmds)()
+
+    # PERCEPTS
+    def check_bumper(self):
+        pass
+
+    def check_for_dirt(self):
+        pass
+
+    def check_if_home(self):
+        pass
+
+    # DECISIONS!!!!
+    def make_decision(self):
+        if self.check_bumper():
+            self.rand_motion(self.rand_turn)
+            return None
+        if self.check_for_dirt():
+            self.clean_square()
+            return None
+        if check_if_home():
+            if self.power < self.power_threshold:
+                self.power_off()
+                return None
+        self.rand_move(self.rand_motion)
+        pass
+
+
 
 def build_environment(dimensions, dirt_cnt, vacuum_cnt):
     env = VacuumEnvironment()
     env.set_dimensions(*dimensions)
     Dirt.dump_rand_dirt(env, dirt_cnt)
-    env.create_object((3,1), Vacuum(None))
+    env.create_object((3,1), Vacuum())
     return env
 
 # def build_expriment(environment, num_vacuums, )
 
 if __name__ == "__main__":
-    dims = (15, 15)
-    test = build_environment(dims, 15, 1)
+    dims = (7, 7)
+    test = build_environment(dims, 5, 1)
     test.display_cell_counts()
-
-    # for x in [ele for row in test.array for ele in row]:
-    #     x.set_state(get_rand_weighted_val([(0, 0.8), (1, 0.2)]))
-
-    # test.display_map(MapCell.get_state)
