@@ -63,14 +63,9 @@ def get_rand_weighted_val(value_probability_pair):
     return value_probability_pair[np.digitize(prob_sum * np.random.random_sample(1), bins)][0]
 
 
-# TODO do I really need this class?...
 class Thing(object):
     """
-    This is a placeholder.  It doesn't do anything
-    but indicate that dirt is in a cell!
-
-    Also have static methods defined here for setting
-    up an environment
+    Base class for a thing that is on a map.
     """
     def __init__(self):
         self.pos = None
@@ -79,14 +74,13 @@ class Thing(object):
 class Dirt(Thing):
     @staticmethod
     def dump_dirt(environment, positions):
-        for x, y in positions:
-            environment.create_object((x, y), Dirt())
+        for pos in positions:
+            environment.create_object(pos, Dirt())
         pass
 
     @staticmethod
     def dump_rand_dirt(environment, count):
-        f = lambda x: randint(0, x - 1)
-        positions = [(f(environment.dims[0]), f(environment.dims[1])) for n in range(count)]
+        positions = [environment.get_random_cell() for n in range(count)]
         Dirt.dump_dirt(environment, positions)
 
 class Furniture(Thing):
@@ -157,26 +151,6 @@ class Vacuum(Thing):
                             (self.move_forward, 1)]
         self.env = None
 
-    @property
-    def power(self):
-        return self._power
-
-    @power.setter
-    def power(self, value):
-        self._power = value
-
-    @property
-    def direction(self):
-        return self._direction
-
-    @direction.setter
-    def direction(self, value):
-        self._direction = value
-
-    @property
-    def bumper(self):
-        return self._bumper
-
     # ACTIONS
     def turn_left(self):
         pass
@@ -240,6 +214,13 @@ class VacuumEnvironment(object):
         self._obj_list = ThingList()
         pass
 
+    def get_random_cell(self):
+        return_coord = []
+        f = lambda x: randint(0, x - 1)
+        for dim in self.dims:
+            return_coord += [f(dim)]
+        return(tuple(return_coord))
+
     def get_cell_contents(self, coords):
         return self._obj_list.get_objects_at_location(coords)
 
@@ -250,6 +231,8 @@ class VacuumEnvironment(object):
         pass
 
     def create_object(self, coords, thing):
+        if coords is None:
+            coords = self.get_random_cell()
         self._obj_list.new_object(coords, thing)
         if hasattr(thing, 'env'):
             print thing
@@ -262,7 +245,7 @@ class VacuumEnvironment(object):
     def display_cell_counts(self):
         self._obj_list.print_list()
         for y in range(self.dims[0]):
-            print [len(self.get_cell_contents((x, y))) for x in range(self.dims[1])]
+            print [len(self.get_cell_contents((x, y, 0))) for x in range(self.dims[1])]
 
 
     def display_map(self, display_types=None):
@@ -276,10 +259,10 @@ class VacuumEnvironment(object):
 def build_environment(dimensions, dirt_cnt, vacuum_cnt):
     env = VacuumEnvironment(dimensions)
     Dirt.dump_rand_dirt(env, dirt_cnt)
-    env.create_object((3,1), Vacuum())
+    env.create_object(None, Vacuum())
     return env
 
 if __name__ == "__main__":
-    dims = (7, 7)
+    dims = (7, 4,3)
     test = build_environment(dims, 5, 1)
     test.display_cell_counts()
