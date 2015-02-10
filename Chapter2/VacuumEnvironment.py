@@ -83,6 +83,9 @@ class Dirt(Thing):
         positions = [environment.get_random_cell() for n in range(count)]
         Dirt.dump_dirt(environment, positions)
 
+    def make_decision(self):
+        pass
+
 class Furniture(Thing):
     pass
 
@@ -171,25 +174,16 @@ class Vacuum(Thing):
     def rand_move(self, cmds):
         get_rand_weighted_val(cmds)()
 
-    # PERCEPTS
-    def check_bumper(self):
-        pass
-
-    def check_for_dirt(self):
-        pass
-
-    def check_if_home(self):
-        pass
-
     # DECISIONS!!!!
     def make_decision(self):
+        self.pos[self._direction_axis] += self._direction_positivity
         if self.check_bumper():
             self.rand_motion(self.rand_turn)
             return None
         if self.check_for_dirt():
             self.clean_square()
             return None
-        if check_if_home():
+        if self.check_if_home():
             if self.power < self.power_threshold:
                 self.power_off()
                 return None
@@ -216,13 +210,13 @@ class VacuumEnvironment(object):
 
     def get_random_cell(self):
         f = lambda x: randint(0, x - 1)
-        return(tuple([f(dim) for dim in self.dims]))
+        return([f(dim) for dim in self.dims])
 
     def get_cell_contents(self, coords):
         return self._obj_list.get_objects_at_location(coords)
 
     def check_for_object_in_cell(self, coords, thing):
-        return any(isinstance(item, thing) for item in self.get_cell_contents(coords))
+        return int(any(isinstance(item, thing) for item in self.get_cell_contents(coords)))
 
     def move_object_from_cell_to_cell(self, src_coords, targ_coords, thing):
         pass
@@ -232,7 +226,6 @@ class VacuumEnvironment(object):
             coords = self.get_random_cell()
         self._obj_list.new_object(coords, thing)
         if hasattr(thing, 'env'):
-            print thing
             thing.env = self
         pass
 
@@ -242,19 +235,24 @@ class VacuumEnvironment(object):
     def display_cell_counts(self):
         self._obj_list.print_list()
         for y in range(self.dims[1]):
-            print [len(self.get_cell_contents((x, y))) for x in range(self.dims[0])]
+            print [self.check_for_object_in_cell([x, y], Vacuum) for x in range(self.dims[0])]
 
-    def process_turn():
-        pass
+    def process_turn(self):
+        for thing in self._obj_list.values():
+            thing.make_decision()
 
 
 def build_environment(dimensions, dirt_cnt, vacuum_cnt):
     env = VacuumEnvironment(dimensions)
     Dirt.dump_rand_dirt(env, dirt_cnt)
-    env.create_object(None, Vacuum())
+    env.create_object([1,1], Vacuum())
     return env
 
 if __name__ == "__main__":
     dims = (7, 4)
     test = build_environment(dims, 5, 1)
-    test.display_cell_counts()
+    for _ in range(3):
+        test.process_turn()
+        print "--- {} ---".format(_)
+        test.display_cell_counts()
+
