@@ -215,11 +215,8 @@ class VacuumEnvironment(object):
         pass
 
     def get_random_cell(self):
-        return_coord = []
         f = lambda x: randint(0, x - 1)
-        for dim in self.dims:
-            return_coord += [f(dim)]
-        return(tuple(return_coord))
+        return(tuple([f(dim) for dim in self.dims]))
 
     def get_cell_contents(self, coords):
         return self._obj_list.get_objects_at_location(coords)
@@ -244,13 +241,8 @@ class VacuumEnvironment(object):
 
     def display_cell_counts(self):
         self._obj_list.print_list()
-        for y in range(self.dims[0]):
-            print [len(self.get_cell_contents((x, y, 0))) for x in range(self.dims[1])]
-
-
-    def display_map(self, display_types=None):
-        plt.imshow(grid)
-        plt.show()
+        for y in range(self.dims[1]):
+            print [len(self.get_cell_contents((x, y))) for x in range(self.dims[0])]
 
     def process_turn():
         pass
@@ -263,6 +255,6 @@ def build_environment(dimensions, dirt_cnt, vacuum_cnt):
     return env
 
 if __name__ == "__main__":
-    dims = (7, 4,3)
+    dims = (7, 4)
     test = build_environment(dims, 5, 1)
     test.display_cell_counts()
